@@ -71,18 +71,11 @@ async def update(ctx):
             for member in vcnl.members:
                 members_in_voice_channel += 1
 
-        print(f"I have counted {members_in_voice_channel} member in voice channel on this guild.")
-        await ctx.send(f"I have counted {members_in_voice_channel} member in voice channel on this guild.")
-
-        # total_count = 0
-        # for txt in text_channels:
-        #     cnl = client.get_channel(int(txt['id']))
-        #     async for _ in cnl.history(limit=None):
-        #         total_count += 1
-        #
-        # print(f"I have counted {total_count} messages on this guild.")
-        # await ctx.send(f"I have counted {total_count} messages on this guild.")
+        total_count = 0
+        for txt in text_channels:
+            cnl = client.get_channel(int(txt['id']))
+            async for _ in cnl.history(limit=None):
+                total_count += 1
 
 
 client.run(TOKEN)
-
