@@ -57,19 +57,32 @@ async def update(ctx):
         with open("./channels.json", "w") as outfile:
             json.dump(channels_dict, outfile, indent=3)
 
-        text_channels = []
+        text_channels, voice_channels = [], []
         for channel in channels_dict:
             if channel['type'] != 4:
                 if "bitrate" not in channel.keys():
                     text_channels.append(channel)
+                else:
+                    voice_channels.append(channel)
 
+        members_in_voice_channel = 0
+        for voice in voice_channels:
+            vcnl = client.get_channel(int(voice['id']))
+            for member in vcnl.members:
+                members_in_voice_channel += 1
 
+        print(f"I have counted {members_in_voice_channel} member in voice channel on this guild.")
+        await ctx.send(f"I have counted {members_in_voice_channel} member in voice channel on this guild.")
 
-        # count = 0
-        # async for _ in ctx.channel.history(limit=None):
-        #     count += 1
+        # total_count = 0
+        # for txt in text_channels:
+        #     cnl = client.get_channel(int(txt['id']))
+        #     async for _ in cnl.history(limit=None):
+        #         total_count += 1
+        #
+        # print(f"I have counted {total_count} messages on this guild.")
+        # await ctx.send(f"I have counted {total_count} messages on this guild.")
 
-        # print(f"total msg in {bvn_channel} = {count}")
-        # await ctx.send(f"total msg in {bvn_channel}: {count}")
 
 client.run(TOKEN)
+
