@@ -1,7 +1,6 @@
-import os, discord, requests, json, ast
+import os, discord, requests, json
 from dotenv import load_dotenv
 from discord.ext import commands
-from discord.utils import get
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -25,25 +24,23 @@ async def update(ctx):
     if str(ctx.message.author) in AUTHORIZED:
         print("[debug] - update triggered")
 
+        rst = {}
+
         guild = ctx.message.guild
 
         # GET DATA
 
         # - general info about the guild and the owner
-        guild_id = guild.id
-        guild_name = guild.name
-        guild_ownerid = guild.owner_id
-        guild_icon = guild.icon
-        # print(f"guild id: {guild_id} - guild_name: {guild_name} - guild owner: {guild_ownerid}")
+        rst['guild_id'] = guild.id
+        rst['guild_name'] = guild.name
+        rst['guild_owner'] = guild.owner
 
         # - permissions
-        roles = guild.roles
+        rst['roles'] = guild.roles
 
-        members_count = guild.member_count
+        rst['members_count'] = guild.member_count
 
-        text_channels = guild.text_channels
-
-        voice = get(client.voice_clients, guild=guild)
+        rst['text_channels'] = guild.text_channels
 
         # test request
         url = "https://discord.com/api/guilds/504433781927575583/channels"
@@ -54,28 +51,35 @@ async def update(ctx):
         channels = request.content.decode('utf-8')
         channels_dict = json.loads(channels)
 
-        with open("./channels.json", "w") as outfile:
-            json.dump(channels_dict, outfile, indent=3)
-
-        text_channels, voice_channels = [], []
+        # text_channels, voice_channels = [], []
+        voice_channels = []
         for channel in channels_dict:
             if channel['type'] != 4:
                 if "bitrate" not in channel.keys():
-                    text_channels.append(channel)
+                    # text_channels.append(channel)
+                    pass
                 else:
                     voice_channels.append(channel)
 
+        rst['voice_channels'] = voice_channels
+
         members_in_voice_channel = 0
         for voice in voice_channels:
-            vcnl = client.get_channel(int(voice['id']))
-            for member in vcnl.members:
+            for member in client.get_channel(int(voice['id'])).members:
                 members_in_voice_channel += 1
 
+        rst['members_in_voice_channel'] = members_in_voice_channel
+
         total_count = 0
-        for txt in text_channels:
-            cnl = client.get_channel(int(txt['id']))
-            async for _ in cnl.history(limit=None):
+        for txt in rst['text_channels']:
+            async for _ in client.get_channel(int(txt['id'])).history(limit=None):
                 total_count += 1
 
+        print(rst)
+        with open("./result.json", "w") as outfile:
+            json.dump(rst, outfile, indent=3)
+
+        print("> [debug] - result obj successfully stored")
+        await ctx.send("All data are successfully updated !")
 
 client.run(TOKEN)
