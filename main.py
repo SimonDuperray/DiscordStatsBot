@@ -65,14 +65,16 @@ async def update(ctx):
 
         members_in_voice_channel = 0
         for voice in voice_channels:
-            for member in client.get_channel(int(voice['id'])).members:
+            voice_channel_buffer = client.get_channel(int(voice['id']))
+            for _ in voice_channel_buffer.members:
                 members_in_voice_channel += 1
 
         rst['members_in_voice_channel'] = members_in_voice_channel
 
         total_count = 0
         for txt in rst['text_channels']:
-            async for _ in client.get_channel(int(txt['id'])).history(limit=None):
+            txt_channel_buffer = client.get_channel(int(txt['id']))
+            async for _ in txt_channel_buffer.history(limit=None):
                 total_count += 1
 
         print(rst)
