@@ -1,11 +1,10 @@
 import discord
 import json
 import os
-import requests
 
-from Role import Role
-from TextChannel import TextChannel
-from VoiceChannel import VoiceChannel
+from Models.Role import Role
+from Models.TextChannel import TextChannel
+from Models.VoiceChannel import VoiceChannel
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -29,7 +28,7 @@ async def on_ready():
 @client.command(name="update")
 async def update(ctx):
     if str(ctx.message.author) in AUTHORIZED:
-        print("[debug] - update triggered")
+        print("[debug] - Update Triggered")
 
         rst = {}
 
@@ -38,11 +37,15 @@ async def update(ctx):
         # GET DATA
 
         # - general info about the guild and the owner
+        print("[debug] - Fetch general data (guild and owner)")
+
         rst['guild_id'] = guild.id
         rst['guild_name'] = guild.name
         rst['guild_owner'] = str(guild.owner)
 
         # - roles
+        print("[debug] - Fetch roles data")
+
         roles = guild.roles
         roles_list = []
         for role in roles:
@@ -50,7 +53,13 @@ async def update(ctx):
 
         rst['roles'] = roles_list
 
+        # - members count
+        print("[debug] - Fetch members count")
+
         rst['members_count'] = guild.member_count
+
+        # - text and voice channels
+        print("[debug] - Fetch Text and Voice Channels")
 
         text_channels = guild.text_channels
         text_channels_list = []
@@ -78,6 +87,9 @@ async def update(ctx):
 
         rst['voice_channels'] = voice_channels_list
 
+        # - members in voice channels
+        print("[debug] - Fetch Members in Voice Channels")
+
         in_voice = {
             "total_count": 0,
             "details": []
@@ -98,6 +110,9 @@ async def update(ctx):
 
         rst['in_voice'] = in_voice
 
+        # - count messages
+        print("[debug] - Fetch counted messages")
+
         count_messages = {
             "count": 0,
             "details": []
@@ -115,10 +130,13 @@ async def update(ctx):
 
         rst['count_messages'] = count_messages
 
+        # write into json file
+        print("[debug] - Write into json file")
+
         with open("./result.json", "w") as outfile:
             json.dump(rst, outfile, indent=3)
 
-        print("> [debug] - result obj successfully stored")
-        await ctx.send("All data are successfully updated !")
+        print("> [debug] - All the data are successfully stored into json file!")
+        await ctx.send("All the data are successfully stored into json file!")
 
 client.run(TOKEN)
