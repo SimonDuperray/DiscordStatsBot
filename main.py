@@ -1,6 +1,11 @@
-import os, discord, requests, json
-from dotenv import load_dotenv
+import discord
+import json
+import os
+import requests
+
+from Role import Role
 from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -33,51 +38,59 @@ async def update(ctx):
         # - general info about the guild and the owner
         rst['guild_id'] = guild.id
         rst['guild_name'] = guild.name
-        rst['guild_owner'] = guild.owner
+        rst['guild_owner'] = str(guild.owner)
 
         # - permissions
-        rst['roles'] = guild.roles
+        roles = guild.roles
+        roles_list = []
+        for role in roles:
+            roles_list.append(Role(role.id, role.name).__dict__)
 
-        rst['members_count'] = guild.member_count
+        rst['roles'] = roles_list
 
-        rst['text_channels'] = guild.text_channels
+        # rst['members_count'] = guild.member_count
+
+        # rst['text_channels'] = guild.text_channels
 
         # test request
-        url = "https://discord.com/api/guilds/504433781927575583/channels"
-        headers = {
-            "Authorization": "Bot " + TOKEN
-        }
-        request = requests.get(url=url, headers=headers)
-        channels = request.content.decode('utf-8')
-        channels_dict = json.loads(channels)
-
+        # url = "https://discord.com/api/guilds/504433781927575583/channels"
+        # headers = {
+        #     "Authorization": "Bot " + TOKEN
+        # }
+        # request = requests.get(url=url, headers=headers)
+        # channels = request.content.decode('utf-8')
+        # channels_dict = json.loads(channels)
+        #
         # text_channels, voice_channels = [], []
-        voice_channels = []
-        for channel in channels_dict:
-            if channel['type'] != 4:
-                if "bitrate" not in channel.keys():
-                    # text_channels.append(channel)
-                    pass
-                else:
-                    voice_channels.append(channel)
+        # for channel in channels_dict:
+        #     if channel['type'] != 4:
+        #         if "bitrate" not in channel.keys():
+        #             text_channels.append(dict(channel))
+        #         else:
+        #             voice_channels.append(dict(channel))
 
-        rst['voice_channels'] = voice_channels
+        # rst['voice_channels'] = voice_channels
+        # rst['text_channels'] = text_channels
 
-        members_in_voice_channel = 0
-        for voice in voice_channels:
-            voice_channel_buffer = client.get_channel(int(voice['id']))
-            for _ in voice_channel_buffer.members:
-                members_in_voice_channel += 1
+        # members_in_voice_channel = 0
+        # for voice in voice_channels:
+        #     voice_buffer = client.get_channel(int(voice['id']))
+        #     members_in_voice_channel += len(voice_buffer.members)
+            # members = [member.name for member in voice_buffer.members]
+            # await ctx.send(f"There are {len(voice_buffer.members)} members in {voice_buffer.name} channel: {members}")
 
-        rst['members_in_voice_channel'] = members_in_voice_channel
+        # rst['members_in_voice_channel'] = members_in_voice_channel
 
-        total_count = 0
-        for txt in rst['text_channels']:
-            txt_channel_buffer = client.get_channel(int(txt['id']))
-            async for _ in txt_channel_buffer.history(limit=None):
-                total_count += 1
+        # total_count = 0
+        # for txt in text_channels:
+        #     count = 0
+        #     async for _ in client.get_channel(int(txt['id'])).history(limit=None):
+        #         count += 1
+        #     print(f"{txt['id']} - {txt['name']}: {count} messages counted")
+        #     total_count += count
 
-        print(rst)
+        # rst['total_count_messages'] = total_count
+
         with open("./result.json", "w") as outfile:
             json.dump(rst, outfile, indent=3)
 
