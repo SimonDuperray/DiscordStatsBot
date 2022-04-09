@@ -6,6 +6,7 @@ import time
 from Models.Role import Role
 from Models.TextChannel import TextChannel
 from Models.VoiceChannel import VoiceChannel
+from Models.Member import Member
 from discord.ext import commands
 from dotenv import load_dotenv
 from datetime import datetime
@@ -37,6 +38,8 @@ async def update(ctx):
 
         guild = ctx.message.guild
 
+        rst['now'] = str(datetime.now())
+
         # GET DATA
 
         # - general info about the guild and the owner
@@ -66,6 +69,24 @@ async def update(ctx):
         rst['members_count'] = guild.member_count
 
         print(f"[debug] - Fetched members count in {round(time.time() - buffer_time, 2)}s !")
+
+        # - members list
+        buffer_time = time.time()
+
+        members = guild.members
+        members_list = []
+        for member in members:
+            members_list.append(Member(
+                member.id,
+                member.name,
+                member.discriminator,
+                member.bot,
+                member.nick
+            ).__dict__)
+
+        rst['members'] = members_list
+
+        print(f"[debug] - Fetched Members list in {round(time.time() - buffer_time, 2)}s !")
 
         # - text and voice channels
         buffer_time = time.time()
@@ -131,16 +152,16 @@ async def update(ctx):
             "count": 0,
             "details": []
         }
-        # for txt in rst['text_channels']:
-        #     count = 0
-        #     async for _ in client.get_channel(int(txt['id'])).history(limit=None):
-        #         count += 1
-        #     count_messages['details'].append({
-        #         "channel_name": txt['name'],
-        #         "channel_id": txt['id'],
-        #         "total": count
-        #     })
-        #     count_messages['count'] += count
+        for txt in rst['text_channels']:
+            count = 0
+            async for _ in client.get_channel(int(txt['id'])).history(limit=None):
+                count += 1
+            count_messages['details'].append({
+                "channel_name": txt['name'],
+                "channel_id": txt['id'],
+                "total": count
+            })
+            count_messages['count'] += count
 
         rst['count_messages'] = count_messages
 
