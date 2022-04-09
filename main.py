@@ -4,6 +4,8 @@ import os
 import requests
 
 from Role import Role
+from TextChannel import TextChannel
+from VoiceChannel import VoiceChannel
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -40,7 +42,7 @@ async def update(ctx):
         rst['guild_name'] = guild.name
         rst['guild_owner'] = str(guild.owner)
 
-        # - permissions
+        # - roles
         roles = guild.roles
         roles_list = []
         for role in roles:
@@ -48,48 +50,70 @@ async def update(ctx):
 
         rst['roles'] = roles_list
 
-        # rst['members_count'] = guild.member_count
+        rst['members_count'] = guild.member_count
 
-        # rst['text_channels'] = guild.text_channels
+        text_channels = guild.text_channels
+        text_channels_list = []
+        for txt in text_channels:
+            text_channels_list.append(TextChannel(
+                txt.id,
+                txt.name,
+                txt.position,
+                txt.nsfw
+            ).__dict__)
 
-        # test request
-        # url = "https://discord.com/api/guilds/504433781927575583/channels"
-        # headers = {
-        #     "Authorization": "Bot " + TOKEN
-        # }
-        # request = requests.get(url=url, headers=headers)
-        # channels = request.content.decode('utf-8')
-        # channels_dict = json.loads(channels)
-        #
-        # text_channels, voice_channels = [], []
-        # for channel in channels_dict:
-        #     if channel['type'] != 4:
-        #         if "bitrate" not in channel.keys():
-        #             text_channels.append(dict(channel))
-        #         else:
-        #             voice_channels.append(dict(channel))
+        rst['text_channels'] = text_channels_list
 
-        # rst['voice_channels'] = voice_channels
-        # rst['text_channels'] = text_channels
+        voice_channels = guild.voice_channels
+        voice_channels_list = []
+        for voice in voice_channels:
+            voice_channels_list.append(VoiceChannel(
+                voice.id,
+                voice.name,
+                voice.position,
+                voice.bitrate,
+                voice.user_limit,
+                voice.category_id
+            ).__dict__)
 
-        # members_in_voice_channel = 0
-        # for voice in voice_channels:
-        #     voice_buffer = client.get_channel(int(voice['id']))
-        #     members_in_voice_channel += len(voice_buffer.members)
-            # members = [member.name for member in voice_buffer.members]
-            # await ctx.send(f"There are {len(voice_buffer.members)} members in {voice_buffer.name} channel: {members}")
+        rst['voice_channels'] = voice_channels_list
 
-        # rst['members_in_voice_channel'] = members_in_voice_channel
+        in_voice = {
+            "total_count": 0,
+            "details": []
+        }
 
-        # total_count = 0
-        # for txt in text_channels:
-        #     count = 0
-        #     async for _ in client.get_channel(int(txt['id'])).history(limit=None):
-        #         count += 1
-        #     print(f"{txt['id']} - {txt['name']}: {count} messages counted")
-        #     total_count += count
+        for voice in rst['voice_channels']:
+            voice_buffer = client.get_channel(int(voice['id']))
+            len_buffer = len(voice_buffer.members)
+            if len_buffer > 0:
+                in_voice['total_count'] += len(voice_buffer.members)
+                members = [member.name for member in voice_buffer.members]
+                in_voice['details'].append({
+                    "channel_name": str(voice_buffer.name),
+                    "channel_id": voice_buffer.id,
+                    'members': members
+                })
+                await ctx.send(f"There are {len(voice_buffer.members)} members in {voice_buffer.name} channel: {members}")
 
-        # rst['total_count_messages'] = total_count
+        rst['in_voice'] = in_voice
+
+        count_messages = {
+            "count": 0,
+            "details": []
+        }
+        for txt in rst['text_channels']:
+            count = 0
+            async for _ in client.get_channel(int(txt['id'])).history(limit=None):
+                count += 1
+            count_messages['details'].append({
+                "channel_name": txt['name'],
+                "channel_id": txt['id'],
+                "total": count
+            })
+            count_messages['count'] += count
+
+        rst['count_messages'] = count_messages
 
         with open("./result.json", "w") as outfile:
             json.dump(rst, outfile, indent=3)
